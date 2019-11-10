@@ -174,21 +174,33 @@ void Interpreter::shuntingYard(list<string> *tokenList) {
     //        Set state to ExpectOperator.
 
 
+    //     If token is a unary operator.
+    //        Error if the state is not ExpectOperand.
+    //        Push the token to the operator stack.
+    //        Set the state to ExpectOperand.
 
-    //  If it's an operator
+
+
+    //  If it's a binary operator
     if (this->isOperator(*it)) {
       if (machineState == 0) {
-
+        __throw_invalid_argument("bad input");
       }
       // While there's an operator on the top of the stack with greater
       // precedence:
-      while (false) {
+      while (operatorsStack->top() == "*") {
         // Pop operators from the stack onto the output queue
-
+        string tmp = operatorsStack->top();
+        outputQueue->push(tmp);
+        operatorsStack->pop();
       }
       // Push the current operator onto the stack
-      this->operatorsStack->push(this->tokenList->front());
+      this->operatorsStack->push(*it);
+      machineState = 0;
     }
+
+
+
     // If it's a left bracket push it onto the stack
 
 
