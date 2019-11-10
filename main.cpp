@@ -27,11 +27,11 @@ int main() {
     cout << "3: " << e3->calculate() << endl; //-10.5
     delete e3;
 
-//    // 4
-//    Interpreter* i1 = new Interpreter();
-//    Expression* e4 = i1->interpret("-(2*(3+4))");
-//    std::cout << "4: " << e4->calculate() << std::endl;//-14
-//    delete e4;
+  // 4
+  Interpreter *i1 = new Interpreter();
+  Expression *e4 = i1->interpret("-(2*(300+400))");
+  std::cout << "4: " << e4->calculate() << std::endl;//-14
+  delete e4;
 //
 //    // 5
 //    Interpreter* i2 = new Interpreter();

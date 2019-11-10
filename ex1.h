@@ -4,6 +4,9 @@
 
 #ifndef EX1_EX1_H
 #define EX1_EX1_H
+#include <stack>
+#include <queue>
+#include <list>
 #include"Expression.h"
 using namespace std;
 
@@ -88,4 +91,21 @@ class UMinus : public UnaryOperator{
   virtual ~UMinus() override = default;
 };
 
+// iterator
+class Interpreter {
+ private:
+  queue<string> *outputQueue;
+  stack<string> *operatorsStack;
+  list<string> *tokenList;
+ public:
+  Interpreter();
+  ~Interpreter();
+  bool isOperator(string token);
+  bool isDigit(char token);
+  void setVariables(string vars);
+  void fromStringToList(string expression);
+  void shuntingYard(list<string> *tokenList);
+  Expression *fromPolishToTree(queue<string> *yardOutput);
+  Expression *interpret(string expression);
+};
 #endif //EX1_EX1_H
