@@ -167,19 +167,15 @@ void Interpreter::shuntingYard(list<string> *tokenList) {
       machineState = 1;
     }
 
-
     //    If token is a variable.
     //        Error if state is not ExpectOperand.
     //        Push token to output queue.
     //        Set state to ExpectOperator.
 
-
     //     If token is a unary operator.
     //        Error if the state is not ExpectOperand.
     //        Push the token to the operator stack.
     //        Set the state to ExpectOperand.
-
-
 
     //  If it's a binary operator
     if (this->isOperator(*it)) {
@@ -187,7 +183,8 @@ void Interpreter::shuntingYard(list<string> *tokenList) {
         __throw_invalid_argument("bad input");
       }
       // While there's an operator on the top of the stack with greater
-      // precedence:
+      // precedence: -------------------------------------___
+      // >>>>>>>>>>>>>>>>>>>>>IMPORTANT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       while (operatorsStack->top() == "*") {
         // Pop operators from the stack onto the output queue
         string tmp = operatorsStack->top();
@@ -199,24 +196,31 @@ void Interpreter::shuntingYard(list<string> *tokenList) {
       machineState = 0;
     }
 
-
-
     // If it's a left bracket push it onto the stack
-
-
+    if (*it == "(") {
+      if (machineState == 1) {
+        __throw_invalid_argument("bad input");
+      }
+      this->operatorsStack->push(*it);
+      machineState = 1;
+    }
 
     // If it's a right bracket
     if (this->tokenList->front() == ")") {
+      if (machineState == 0) {
+        __throw_invalid_argument("bad input");
+      }
       // While there's not a left bracket at the top of the stack:
       while (!(this->operatorsStack->top() == "(")) {
         // Pop operators from the stack onto the output queue.
-
-
+        string tmp = operatorsStack->top();
+        outputQueue->push(tmp);
+        operatorsStack->pop();
       }
       // Pop the left bracket from the stack and discard it
 
+      machineState = 1;
     }
-
   }
   //  While there are operators on the stack, pop them to the queue
 
