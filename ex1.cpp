@@ -7,9 +7,7 @@ using namespace std;
 
 // part 1 of the EX 1:
 // implementations of constructors:
-Value::Value(double v) {
-  this->value = v;
-}
+Value::Value(const double v) : value(v) {}
 Variable::Variable(string s, double v) {
   this->value = v;
   this->name = s;
@@ -96,44 +94,88 @@ Interpreter::Interpreter() {
   this->outputQueue = new queue<string>();
   this->operatorsStack = new stack<string>;
   this->tokenList = new list<string>();
+  this->finalStack = new stack<string>();
 }
 Interpreter::~Interpreter() {
   delete (this->tokenList);
   delete (this->outputQueue);
   delete (this->operatorsStack);
+  delete (this->finalStack);
 }
 bool Interpreter::isDigit(char token) {
   return (token <= 57 && token >= 48);
 }
-bool Interpreter::isOperator(string token) {
+bool Interpreter::isBinaryOperator(string token) {
   return (token == "/" || token == "*"
       || token == "+" || token == "-");
+}
+bool Interpreter::isStackTopOperatorGreaterOrEqualIt(string iterator) {
+  string top = this->operatorsStack->top();
+  if (top == "$" || top == "#") {
+    return true;
+  }
+  if (this->operatorsStack->empty()) {
+    return false;
+  };
+  if ((top == "+" || top == "-") && (iterator == "*" || iterator == "/")) {
+    return false;
+  }
+  if ((top == "*" || top == "/") && (iterator == "+" || iterator == "-")) {
+    return true;
+  }
+  if ((top == "+" || top == "-") && (iterator == "+" || iterator == "-")) {
+    return true;
+  }
+  return (top == "*" || top == "/") && (iterator == "*" || iterator == "/");
 }
 void Interpreter::setVariables(string vars) {
 
 }
 void Interpreter::fromStringToList(string expression) {
-  for (int i = 0, j = 0; i < expression.size(); i++) {
-    // token in string is not a number....
-    if (!this->isDigit(expression[i])) {
-      char token = expression[i];
-      this->tokenList->push_front(&token);
-      j++;
-      continue;
-    }
-    // token is a number
-    while (j < expression.size() && ((this->isDigit(expression[j + 1])
-        || expression[j + 1] == 46))) {
-      j++;
-    }
-    // preparing the more then 1 digit number to insert to the list
-    int tokenLen = j - i + 1;
+  // iterate all the chars in the string
+  for (int i = 0, j = 0; i < expression.size(); i++, j++) {
     string token;
-    for (int k = 0; k < tokenLen; k++, i++) {
-      token += expression[i];
+    bool isUMinus = false;
+    bool isUPlus = false;
+    char current = expression[i];
+    // if we have number upcoming
+    if (this->isDigit(current) || (current == '-' && this->isDigit
+        (expression[j + 1]))) {
+      while (this->isDigit(expression[j + 1]) || expression[j + 1] == 46) {
+        j++;
+      }
     }
-    this->tokenList->push_front(token);
-    i = j;
+    // if we have variable upcoming
+    if (this->isChar(current)) {
+      while (this->isDigit(expression[j + 1]) ||
+          this->isChar(expression[j + 1]) || expression[j + 1] == 95) {
+        j++;
+      }
+    }
+    // if we have unary operator
+    if (current == '-' && expression[j + 1] == '(') {
+      isUMinus = true;
+    }
+    if (current == '+' && expression[j + 1] == '(') {
+      isUPlus = true;
+    }
+
+
+    // preparing to insert to the list
+    int tokenLen = j - i + 1;
+    for (int k = 0, z = i; k < tokenLen; k++, z++) {
+      if (isUMinus) {
+        token = '$';
+      } else if (isUPlus) {
+        token = '#';
+      } else {
+        token += expression[z];
+      }
+    }
+    this->tokenList->push_back(token);
+    if (tokenLen > 1) {
+      i = j;
+    }
   }
 }
 /*
@@ -149,7 +191,7 @@ void Interpreter::fromStringToList(string expression) {
  * save run time complexity.
  *
  * */
-void Interpreter::shuntingYard(list<string> *tokenList) {
+void Interpreter::shuntingYard() {
   // the machine will have 2 states ExpectOperand and ExpectOperator.
   // ExpectOperand == 0 , ExpectOperator == 1;
   int machineState = 0;
@@ -157,7 +199,8 @@ void Interpreter::shuntingYard(list<string> *tokenList) {
   for (list<string>::iterator it = tokenList->begin(); it != tokenList->end();
        ++it) {
     // If it's a number
-    if (this->isDigit((*it)[0])) {
+    if (this->isDigit((*it)[0]) || ((*it)[0] == '-' && this->isDigit((*it)
+                                                                     [1]))) {
       // if machine expect to get operator and we actually have an operand...
       if (machineState == 1) {
         __throw_invalid_argument("bad input");
@@ -172,20 +215,28 @@ void Interpreter::shuntingYard(list<string> *tokenList) {
     //        Push token to output queue.
     //        Set state to ExpectOperator.
 
-    //     If token is a unary operator.
-    //        Error if the state is not ExpectOperand.
-    //        Push the token to the operator stack.
-    //        Set the state to ExpectOperand.
-
-    //  If it's a binary operator
-    if (this->isOperator(*it)) {
+    // If token is a unary operator.
+    if (*it == "#" || *it == "$") {
+      // Error if the state is not ExpectOperator
       if (machineState == 0) {
         __throw_invalid_argument("bad input");
+      }
+      // Push the token to the operator stack.
+      this->operatorsStack->push(*it);
+      // Set the state to ExpectOperand.
+      machineState = 0;
+    }
+
+    //  If it's a binary operator
+    if (this->isBinaryOperator(*it)) {
+      if (machineState == 0) {
+        __throw_invalid_argument("bad input - expected operand but gave an "
+                                 "operator");
       }
       // While there's an operator on the top of the stack with greater
       // precedence: -------------------------------------___
       // >>>>>>>>>>>>>>>>>>>>>IMPORTANT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      while (operatorsStack->top() == "*") {
+      while (this->isStackTopOperatorGreaterOrEqualIt(*it)) {
         // Pop operators from the stack onto the output queue
         string tmp = operatorsStack->top();
         outputQueue->push(tmp);
@@ -199,49 +250,91 @@ void Interpreter::shuntingYard(list<string> *tokenList) {
     // If it's a left bracket push it onto the stack
     if (*it == "(") {
       if (machineState == 1) {
-        __throw_invalid_argument("bad input");
+        __throw_invalid_argument("bad input - expected operator, not "
+                                 "parentheses");
       }
       this->operatorsStack->push(*it);
-      machineState = 1;
+      machineState = 0;
     }
 
     // If it's a right bracket
-    if (this->tokenList->front() == ")") {
+    if (*it == ")") {
       if (machineState == 0) {
         __throw_invalid_argument("bad input");
       }
       // While there's not a left bracket at the top of the stack:
-      while (!(this->operatorsStack->top() == "(")) {
+      while (!(this->operatorsStack->empty()) && !(this->operatorsStack->top()
+          == "(")) {
         // Pop operators from the stack onto the output queue.
         string tmp = operatorsStack->top();
         outputQueue->push(tmp);
         operatorsStack->pop();
       }
-      // Pop the left bracket from the stack and discard it
-
-      machineState = 1;
+      // check if there were too many parenthesis
+      if (this->operatorsStack->empty()) {
+        __throw_invalid_argument("bad input - too many parenthesis");
+      } else {
+        // Pop the left bracket from the stack and discard it
+        operatorsStack->pop();
+        machineState = 1;
+      }
     }
   }
   //  While there are operators on the stack, pop them to the queue
-
-  //__throw_invalid_argument("bad input");
-
+  while (!(operatorsStack->empty())) {
+    if (operatorsStack->top() == "(" || operatorsStack->top() == ")") {
+      __throw_invalid_argument("bad input - mismatched parenthesis"); // mismatched parenthesis
+    }
+    string tmp = operatorsStack->top();
+    outputQueue->push(tmp);
+    operatorsStack->pop();
+  }
   // end of shunting yard
 }
-Expression *Interpreter::fromPolishToTree(queue<string> *yardOutput) {
+Expression *Interpreter::fromPolishToTree() {
+  if (isDigit(this->finalStack->top()[0]) || this->finalStack->top()[0] ==
+      '-') {
+    string::size_type st;
+    double val = stod(this->finalStack->top(), &st);
+    this->finalStack->pop();
+    return new Value(val);
+  }
+  char operatorChar = this->finalStack->top()[0];
+  switch (operatorChar) {
+    case ('+'):this->finalStack->pop();
+      return new Plus(this->fromPolishToTree(), this->fromPolishToTree());
+    case ('-'):this->finalStack->pop();
+      return new Minus(fromPolishToTree(), fromPolishToTree());
+    case ('*'):this->finalStack->pop();
+      return new Mul(fromPolishToTree(), fromPolishToTree());
+    case ('/'):this->finalStack->pop();
+      return new Div(fromPolishToTree(), fromPolishToTree());
+    case ('$'):this->finalStack->pop();
+      return new UMinus(fromPolishToTree());
+    case ('#'):this->finalStack->pop();
+      return new UPlus(fromPolishToTree());
+  }
   return nullptr;
 }
 Expression *Interpreter::interpret(string expression) {
   // first stage of the interpreter
   fromStringToList(expression);
-  // programmer test before s.y
-  while (!tokenList->empty()) {
-    cout << tokenList->front() << endl;
-    tokenList->pop_front();
-  }
   // second stage of interpreter - shunting yard
-  shuntingYard(this->tokenList);
+  shuntingYard();
+  // creating the final stack
+  createFinalStack();
   // third stage - creating the expression tree
-  Expression *after = fromPolishToTree(this->outputQueue);
-  return after;
+  return fromPolishToTree();
 }
+void Interpreter::createFinalStack() {
+  while (!this->outputQueue->empty()) {
+    string tmp = this->outputQueue->front();
+    this->finalStack->push(tmp);
+    this->outputQueue->pop();
+  }
+}
+bool Interpreter::isChar(char token) {
+  return (token <= 90 && token >= 65) || (token <= 122 && token >= 97);
+}
+
+

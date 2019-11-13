@@ -29,7 +29,7 @@ int main() {
 
   // 4
   Interpreter *i1 = new Interpreter();
-  Expression *e4 = i1->interpret("-(2*(300+400))");
+  Expression *e4 = i1->interpret("(3*5)");
   std::cout << "4: " << e4->calculate() << std::endl;//-14
   delete e4;
 //

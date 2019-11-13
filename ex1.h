@@ -28,7 +28,7 @@ class UnaryOperator : public Expression {
 };
 class Value : public Expression{
  private:
-  double value;
+  const double value;
  public:
   explicit Value(double v);
   virtual ~Value() override = default;
@@ -94,18 +94,23 @@ class UMinus : public UnaryOperator{
 // iterator
 class Interpreter {
  private:
+  Expression *result;
   queue<string> *outputQueue;
   stack<string> *operatorsStack;
+  stack<string> *finalStack;
   list<string> *tokenList;
  public:
   Interpreter();
   ~Interpreter();
-  bool isOperator(string token);
+  bool isBinaryOperator(string token);
   bool isDigit(char token);
+  bool isChar(char token);
+  bool isStackTopOperatorGreaterOrEqualIt(string iterator);
   void setVariables(string vars);
   void fromStringToList(string expression);
-  void shuntingYard(list<string> *tokenList);
-  Expression *fromPolishToTree(queue<string> *yardOutput);
+  void shuntingYard();
+  void createFinalStack();
+  Expression *fromPolishToTree();
   Expression *interpret(string expression);
 };
 #endif //EX1_EX1_H
