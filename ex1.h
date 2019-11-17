@@ -7,26 +7,27 @@
 #include <stack>
 #include <queue>
 #include <list>
+#include <map>
 #include"Expression.h"
 using namespace std;
 
 // classes that inherit from Expression class
-class BinaryOperator : public Expression{
+class BinaryOperator : public Expression {
  protected:
   Expression *left;
   Expression *right;
  public:
-  BinaryOperator(Expression *left, Expression *right);
-  virtual ~BinaryOperator() override ;
+  BinaryOperator(Expression *leftE, Expression *rightE);
+  virtual ~BinaryOperator() override;
 };
 class UnaryOperator : public Expression {
  protected:
   Expression *exp;
  public:
-  explicit UnaryOperator(Expression *exp);
-  virtual ~UnaryOperator() override ;
+  explicit UnaryOperator(Expression *expression);
+  virtual ~UnaryOperator() override;
 };
-class Value : public Expression{
+class Value : public Expression {
  private:
   const double value;
  public:
@@ -34,7 +35,7 @@ class Value : public Expression{
   virtual ~Value() override = default;
   double calculate() override;
 };
-class Variable : public Expression{
+class Variable : public Expression {
  private:
   double value;
   string name;
@@ -42,59 +43,59 @@ class Variable : public Expression{
   Variable(string s, double v);
   virtual ~Variable() override = default;
   double calculate() override;
-  Variable& operator++();
-  Variable& operator++(int);
-  Variable& operator--();
-  Variable& operator--(int);
-  Variable& operator +=(double num);
-  Variable& operator -=(double num);
-  void setValue(double val);
+  Variable &operator++();
+  Variable &operator++(int);
+  Variable &operator--();
+  Variable &operator--(int);
+  Variable &operator+=(double num);
+  Variable &operator-=(double num);
 };
 
 // classes that inherit from BinaryOperator
-class Plus : public BinaryOperator{
+class Plus : public BinaryOperator {
  public:
   double calculate() override;
-  Plus(Expression *left, Expression *right) : BinaryOperator(left, right){}
-  virtual ~Plus() override = default;;
+  Plus(Expression *leftE, Expression *rightE) : BinaryOperator(leftE, rightE) {}
+  virtual ~Plus() override = default;
 };
-class Minus : public BinaryOperator{
+class Minus : public BinaryOperator {
  public:
   double calculate() override;
-  Minus(Expression *left, Expression *right) : BinaryOperator(left, right){}
-  virtual ~Minus() override = default;;
+  Minus(Expression *leftE, Expression *rightE) : BinaryOperator(leftE,
+                                                                rightE) {}
+  virtual ~Minus() override = default;
 };
-class Mul : public BinaryOperator{
+class Mul : public BinaryOperator {
  public:
   double calculate() override;
-  Mul(Expression *left, Expression *right) : BinaryOperator(left, right){}
+  Mul(Expression *leftE, Expression *rightE) : BinaryOperator(leftE, rightE) {}
   virtual ~Mul() override = default;
 };
-class Div : public BinaryOperator{
+class Div : public BinaryOperator {
  public:
   double calculate() override;
-  Div(Expression *left, Expression *right) : BinaryOperator(left, right){}
+  Div(Expression *leftE, Expression *rightE) : BinaryOperator(leftE, rightE) {}
   virtual ~Div() override = default;
 };
 
 // classes that inherit from UnaryOperator
-class UPlus : public UnaryOperator{
+class UPlus : public UnaryOperator {
  public:
   double calculate() override;
-  explicit UPlus(Expression *exp) : UnaryOperator(exp){}
+  explicit UPlus(Expression *expression) : UnaryOperator(expression) {}
   virtual ~UPlus() override = default;
 };
-class UMinus : public UnaryOperator{
+class UMinus : public UnaryOperator {
  public:
   double calculate() override;
-  explicit UMinus(Expression *exp) : UnaryOperator(exp){}
+  explicit UMinus(Expression *expression) : UnaryOperator(expression) {}
   virtual ~UMinus() override = default;
 };
 
 // iterator
 class Interpreter {
  private:
-  Expression *result;
+  map<string, double> *varMap;
   queue<string> *outputQueue;
   stack<string> *operatorsStack;
   stack<string> *finalStack;
@@ -105,8 +106,10 @@ class Interpreter {
   bool isBinaryOperator(string token);
   bool isDigit(char token);
   bool isChar(char token);
+  bool isValidNumber(string token);
   bool isStackTopOperatorGreaterOrEqualIt(string iterator);
   void setVariables(string vars);
+  void setVariablesHelper(string var);
   void fromStringToList(string expression);
   void shuntingYard();
   void createFinalStack();
