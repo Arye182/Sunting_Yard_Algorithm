@@ -197,8 +197,8 @@ int main() {
   Expression *e12 = nullptr;
   try {
     // 11
-    i9->setVariables("x=14;y222_6d=8.5877888888888888");
-    e12 = i9->interpret("-(y222_6d)"); //error
+    i9->setVariables("x=14");
+    e12 = i9->interpret("5+3"); //error
     std::cout << "12: " << e12->calculate() << std::endl;
     delete e12;
     delete i9;

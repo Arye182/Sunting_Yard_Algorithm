@@ -1,3 +1,7 @@
+//
+// Created by Arye Amsalem on 04/11/2019.
+//
+
 #include <stdexcept>
 #include"Expression.h"
 #include "ex1.h"
@@ -53,6 +57,7 @@ Variable &Variable::operator-=(double num) {
   return *this;
 }
 
+// calculate implementations
 double Value::calculate() {
   return this->value;
 }
@@ -190,7 +195,8 @@ void Interpreter::fromStringToList(string expression) {
     }
     if (j != 0
         && (this->isDigit(expression[j - 1]) ||
-            this->isChar(expression[j - 1]))) {
+            this->isChar(expression[j - 1]) || expression[j - 1]
+            == ')')) {
       isUMinus = false;
       isUPlus = false;
     }
@@ -231,7 +237,6 @@ void Interpreter::shuntingYard() {
   if (this->tokenList->front() == "#" || this->tokenList->front() == "$") {
     machineState = 1;
   }
-
   // we will use the list iterator :)
   for (list<string>::iterator it = tokenList->begin(); it != tokenList->end();
        ++it) {
@@ -240,8 +245,7 @@ void Interpreter::shuntingYard() {
         && this->isDigit((*it)[1]))) {
       // if machine expect to get operator and we actually have an operand...
       if (machineState == 1) {
-        //__throw_invalid_argument("bad input");
-        throw "bbb";
+        throw "bad expression";
       }
       // push it to queue
       this->outputQueue->push(*it);
@@ -277,8 +281,7 @@ void Interpreter::shuntingYard() {
                "operator");
       }
       // While there's an operator on the top of the stack with greater
-      // precedence: -------------------------------------___
-      // >>>>>>>>>>>>>>>>>>>>>IMPORTANT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      // precedence:
       while (this->isStackTopOperatorGreaterOrEqualIt(*it)) {
         // Pop operators from the stack onto the output queue
         string tmp = operatorsStack->top();
@@ -348,7 +351,6 @@ Expression *Interpreter::fromPolishToTree() {
     this->finalStack->pop();
     return new Value(val);
   }
-
   if (this->isChar(this->finalStack->top()[0])) {
     string name = this->finalStack->top();
     map<string, double>::iterator it;
@@ -363,10 +365,11 @@ Expression *Interpreter::fromPolishToTree() {
   Expression *left;
   Expression *right;
   Expression *unExp;
-
   string operatorChar = this->finalStack->top();
+  // case this is a binary operator
   if (this->isBinaryOperator(operatorChar)) {
     this->finalStack->pop();
+    // evaluating right left first due to polish notation constrains
     right = this->fromPolishToTree();
     left = this->fromPolishToTree();
     switch (operatorChar[0]) {
@@ -375,6 +378,7 @@ Expression *Interpreter::fromPolishToTree() {
       case ('*'):return new Mul(left, right);
       case ('/'):return new Div(left, right);
     }
+    // case its an unary operator
   } else if (operatorChar[0] == '#' || operatorChar[0] == '$') {
     this->finalStack->pop();
     unExp = this->fromPolishToTree();
@@ -406,7 +410,7 @@ bool Interpreter::isChar(char token) {
   return (token <= 90 && token >= 65) || (token <= 122 && token >= 97);
 }
 bool Interpreter::isValidNumber(string token) {
-  int i = 0;
+  unsigned int i = 0;
   int dotFlag = 0;
   if (token[i] == '-') {
     i = 1;

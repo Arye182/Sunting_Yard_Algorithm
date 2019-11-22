@@ -1,5 +1,5 @@
 //
-// Created by arye on 04/11/2019.
+// Created by Arye Amsalem on 04/11/2019.
 //
 
 #ifndef EX1_EX1_H
@@ -29,7 +29,7 @@ class UnaryOperator : public Expression {
 };
 class Value : public Expression {
  private:
-  const double value;
+  const double value; // const for making it immutable
  public:
   explicit Value(double v);
   virtual ~Value() override = default;
@@ -43,6 +43,7 @@ class Variable : public Expression {
   Variable(string s, double v);
   virtual ~Variable() override = default;
   double calculate() override;
+  // the functions below are operator overloading
   Variable &operator++();
   Variable &operator++(int);
   Variable &operator--();
@@ -92,28 +93,41 @@ class UMinus : public UnaryOperator {
   virtual ~UMinus() override = default;
 };
 
-// iterator
+// iterator class
 class Interpreter {
  private:
-  map<string, double> *varMap;
-  queue<string> *outputQueue;
-  stack<string> *operatorsStack;
-  stack<string> *finalStack;
-  list<string> *tokenList;
+  map<string, double> *varMap; // save variables
+  queue<string> *outputQueue; // output from shunting yard
+  stack<string> *operatorsStack; // part of shunting yard
+  stack<string> *finalStack; // switching the output queue to stack
+  list<string> *tokenList; // list of operators and operands to shunting yard
  public:
   Interpreter();
   ~Interpreter();
+  // function that returns if a string is a binary operator
   bool isBinaryOperator(string token);
+  // function that returns id a char is a digit or no
   bool isDigit(char token);
+  // function that returns if a char is a letter or not
   bool isChar(char token);
+  // function that checks if a string is a valid floating number
   bool isValidNumber(string token);
+  // function that helps shunting yard to check operators precedences
   bool isStackTopOperatorGreaterOrEqualIt(string iterator);
+  // function that saves variables in a map
   void setVariables(string vars);
+  // helper for set variables
   void setVariablesHelper(string var);
+  // step one of the interpretation - from string in infix to a list of strings
   void fromStringToList(string expression);
+  // the algorithm shunting yard - enhanced
   void shuntingYard();
+  // switching queue to stack
   void createFinalStack();
+  // taking a stack in polish notation and switch it to expression* in
+  // recursion
   Expression *fromPolishToTree();
+  // the process itself of interpreting
   Expression *interpret(string expression);
 };
 #endif //EX1_EX1_H
